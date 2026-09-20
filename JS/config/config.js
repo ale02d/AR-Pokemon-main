@@ -2,7 +2,7 @@ export const ICONS = {
   cameraOn: '../Assets/svg/camera-ON.svg',
   cameraOff: '../Assets/svg/camera-OFF.svg',
   badgeQr: '../Assets/svg/qr.svg',
-  badgeFood: '../Assets/svg/qr.svg', // TODO: reemplazá por un ícono propio si tenés uno para "detección"
+  badgeFood: '../Assets/svg/qr.svg', 
 };
 
 export const STATUS_MESSAGES = {
