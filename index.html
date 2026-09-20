@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caza Pokémon AR</title>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <link rel="stylesheet" href="./Styles/Design1.css">
+</head>
+<body>
+  <div id="ar-container"></div>
+
+  <div id="scan-effect"></div>
+
+  <div id="ui-loading">
+    <div class="intro-content">
+      <div class="scanner-badge">
+        <img class="scanner-badge-icon" src="./Assets/svg/qr.svg" alt="Escáner">
+      </div>
+      <h1> CAZA POKÉMON </h1>
+      <span class="loading-line"></span>
+      <p id="status-text"> Activa la cámara para encontrar y escanear Pokémon. </p>
+    </div>
+  </div>
+
+  <div class="hud">
+    <section class="panel controls status">
+      <button id="start-ar" class="camera-toggle" type="button">
+        <img class="camera-icon" src="./Assets/svg/camera-ON.svg" alt="">
+        <span class="button-divider" aria-hidden="true"></span>
+        <span class="camera-label"> INICIAR CAZA POKÉMON </span>
+      </button>
+
+      <button id="btn-change" class="capture-toggle" type="button" style="display:none;">
+        <span>Capturar</span>
+      </button>
+
+      <div class="tap-hint" aria-hidden="true">
+        <img src="./Assets/svg/arrow2.svg" alt="">
+        <p>
+          <strong> Toca aquí para comenzar </strong>
+          <br> la caza Pokémon AR
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <div id="ar-ui">
+    <div id="ui-camera" class="ar-state"> Por favor permite el acceso a la cámara. </div>
+    <div id="ui-scanning" class="ar-state"> Busca una tarjeta Pokémon. </div>
+    <div id="ui-detected" class="ar-state"> ¡Pokémon encontrado! </div>
+  </div>
+
+  <script type="module" src="./JS/main.js"></script>
+</body>
+
+</html>
