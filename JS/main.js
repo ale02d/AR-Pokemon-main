@@ -32,7 +32,7 @@ dom.cameraIcon = dom.startButton.querySelector('.camera-icon');
 dom.loadingTitle = dom.uiLoading.querySelector('h1');
 dom.changeButtonLabel = dom.changeButton.querySelector('span');
 
-const eatSound = new Audio('Assets/captura.mp3');
+const eatSound = new Audio('Assets/captura2.mp3');
 const gltfLoader = new GLTFLoader();
 
 const smokeTexture = new THREE.TextureLoader().load('Assets/img/Smoke.png');
