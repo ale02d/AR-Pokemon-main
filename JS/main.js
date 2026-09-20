@@ -32,10 +32,10 @@ dom.cameraIcon = dom.startButton.querySelector('.camera-icon');
 dom.loadingTitle = dom.uiLoading.querySelector('h1');
 dom.changeButtonLabel = dom.changeButton.querySelector('span');
 
-const eatSound = new Audio('../Assets/captura.mp3');
+const eatSound = new Audio('Assets/captura.mp3');
 const gltfLoader = new GLTFLoader();
 
-const smokeTexture = new THREE.TextureLoader().load('../Assets/img/Smoke.png');
+const smokeTexture = new THREE.TextureLoader().load('Assets/img/Smoke.png');
 smokeTexture.colorSpace = THREE.SRGBColorSpace;
 
 const burstParticleGeometry = new THREE.BoxGeometry(0.06, 0.06, 0.06);
@@ -636,7 +636,7 @@ const startAR = async () => {
     if (!mindarThree) {
       mindarThree = new MindARThree({
         container: dom.container,
-        imageTargetSrc: '../Assets/Targets/targetsQR.mind',
+        imageTargetSrc: 'Assets/Targets/targetsQR.mind',
         uiScanning: false,
         uiLoading: false,
         maxTrack: targetConfigs.length,
