@@ -1,8 +1,8 @@
 export const ICONS = {
-  cameraOn: '../../Assets/svg/camera-ON.svg',
-  cameraOff: '../../Assets/svg/camera-OFF.svg',
-  badgeQr: '../../Assets/svg/qr.svg',
-  badgeFood: '../../Assets/svg/qr.svg', 
+  cameraOn: '../Assets/svg/camera-ON.svg',
+  cameraOff: '../Assets/svg/camera-OFF.svg',
+  badgeQr: '../Assets/svg/qr.svg',
+  badgeFood: '../Assets/svg/qr.svg', 
 };
 
 export const STATUS_MESSAGES = {
