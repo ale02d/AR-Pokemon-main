@@ -32,14 +32,97 @@ dom.cameraIcon = dom.startButton.querySelector('.camera-icon');
 dom.loadingTitle = dom.uiLoading.querySelector('h1');
 dom.changeButtonLabel = dom.changeButton.querySelector('span');
 
-const eatSound = new Audio('Assets/captura2.mp3');
+const eatSound = new Audio('Assets/captura.mp3');
 const gltfLoader = new GLTFLoader();
+const clock = new THREE.Clock();
 
-const smokeTexture = new THREE.TextureLoader().load('Assets/img/Smoke.png');
-smokeTexture.colorSpace = THREE.SRGBColorSpace;
+
+const FOUND_SOUND_FILE = 'Assets/captura2.mp3';
+const foundSound = FOUND_SOUND_FILE ? new Audio(FOUND_SOUND_FILE) : null;
+let audioCtx = null;
+const unlockAudio = () => {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (error) {
+    console.warn('Audio no disponible:', error);
+  }
+};
+
+const playFoundSound = () => {
+  if (foundSound) {
+    foundSound.currentTime = 0;
+    foundSound.play().catch(() => {});
+    return;
+  }
+
+  if (!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+  const notes = [659.25, 783.99, 987.77, 1318.51];
+
+  notes.forEach((frequency, index) => {
+    const oscillator = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const start = now + index * 0.09;
+
+    oscillator.type = 'square';
+    oscillator.frequency.value = frequency;
+
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.15, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.28);
+
+    oscillator.connect(gain);
+    gain.connect(audioCtx.destination);
+    oscillator.start(start);
+    oscillator.stop(start + 0.3);
+  });
+};
+
+const createStarTexture = (color) => {
+  const size = 128;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const cx = size / 2;
+  const cy = size / 2;
+  const outer = size * 0.4;
+  const inner = outer * 0.45;
+
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const radius = i % 2 === 0 ? outer : inner;
+    const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = color;
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+  ctx.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+};
+
+const STAR_TEXTURES = ['#ffd60a', '#e63946', '#9d4edd', '#ff7b00', '#ff4fa3', '#ffffff']
+  .map(createStarTexture);
 
 const burstParticleGeometry = new THREE.BoxGeometry(0.06, 0.06, 0.06);
-const burstParticleMaterial = new THREE.MeshStandardMaterial({ color: 0xffa500 });
+const burstParticleMaterial = new THREE.MeshStandardMaterial({ color: 0xe63946 });
 
 
 let started = false;
@@ -117,7 +200,7 @@ const setControlState = (state) => {
 
 const loadGltf = (path) => {
   return new Promise((resolve, reject) => {
-    gltfLoader.load(path, (gltf) => resolve(gltf.scene), undefined, reject);
+    gltfLoader.load(path, (gltf) => resolve(gltf), undefined, reject);
   });
 };
 
@@ -127,9 +210,9 @@ const createTargetState = (config) => ({
   currentModel: null,
   skeletonModel: null,
   infoPanel: null,
-  steamGroup: null,
-  steamParticles: [],
   loadTimeout: null,
+  mixer: null,
+  idleBase: null,
   modelIndex: 0,
   isLoadingModel: false,
   isSkeletonExpired: false,
@@ -145,7 +228,6 @@ const applyOrientation = (object3d, config, rotationPreset) => {
 
 const applyScale = (object3d, config) => {
   const scale = config.scale ?? DEFAULT_MODEL_SCALE;
-  console.log(scale)
   object3d.scale.setScalar(scale);
 };
 
@@ -156,18 +238,21 @@ const createInfoPanel = (config) => {
 
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = 'rgba(10, 20, 40, 0.75)';
+  // Fondo morado
+  ctx.fillStyle = 'rgba(60, 9, 108, 0.8)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.strokeStyle = '#00e5ff';
+  // Borde amarillo con brillo
+  ctx.strokeStyle = '#ffd60a';
   ctx.lineWidth = 3;
-  ctx.shadowColor = '#00e5ff';
+  ctx.shadowColor = '#ffd60a';
   ctx.shadowBlur = 15;
   ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
   ctx.shadowBlur = 0;
 
-  ctx.fillStyle = '#00e5ff';
-  ctx.shadowColor = '#00e5ff';
+  // Título
+  ctx.fillStyle = '#ffd60a';
+  ctx.shadowColor = '#ffd60a';
   ctx.shadowBlur = 15;
 
   ctx.font = '700 34px Rajdhani';
@@ -175,13 +260,15 @@ const createInfoPanel = (config) => {
 
   ctx.shadowBlur = 0;
 
-  ctx.strokeStyle = 'rgba(0,229,255,0.4)';
+  // Línea separadora
+  ctx.strokeStyle = 'rgba(255, 214, 10, 0.4)';
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(20, 60);
   ctx.lineTo(490, 60);
   ctx.stroke();
 
+  // Estadísticas
   ctx.fillStyle = '#ffffff';
   ctx.font = '500 22px Rajdhani';
 
@@ -213,10 +300,9 @@ const callApiEndpoint = (target) => {
       device: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
       os: navigator.userAgent
     })
-  }).catch((error) => {
-    console.warn('No se pudo registrar la interacción:', error);
   });
 };
+
 const createParticles = (state, position) => {
   const particles = [];
   for (let i = 0; i < 10; i++) {
@@ -233,7 +319,8 @@ const createParticles = (state, position) => {
   }
 
   const animateParticles = () => {
-    particles.forEach((particle, index) => {
+    for (let index = particles.length - 1; index >= 0; index--) {
+      const particle = particles[index];
       particle.position.add(particle.userData.velocity);
       particle.userData.velocity.y -= TIMING.particleGravity;
       particle.scale.multiplyScalar(TIMING.particleDecay);
@@ -242,7 +329,7 @@ const createParticles = (state, position) => {
         state.anchor.group.remove(particle);
         particles.splice(index, 1);
       }
-    });
+    }
 
     if (particles.length > 0) {
       requestAnimationFrame(animateParticles);
@@ -252,88 +339,149 @@ const createParticles = (state, position) => {
   animateParticles();
 };
 
-const resetSteamParticle = (particle, firstRun = false) => {
-  const radius = 0.4;
-  const angle = Math.random() * Math.PI * 2;
-  const distance = Math.random() * radius;
+const createStarBurst = (state, origin = new THREE.Vector3(0, 0.4, 0), count = 36) => {
+  const group = new THREE.Group();
+  group.position.copy(origin);
+  group.renderOrder = 10;
+  state.anchor.group.add(group);
 
-  particle.position.set(
-    Math.cos(angle) * distance,
-    firstRun ? 0.25 + Math.random() * 0.8 : 0.25,
-    Math.sin(angle) * distance
-  );
-  particle.scale.setScalar(0.16 + Math.random() * 0.08);
-  particle.material.opacity = firstRun ? Math.random() * 0.35 : 0;
-  particle.material.rotation = Math.random() * Math.PI;
-  particle.userData.life = firstRun ? Math.random() : 0;
-  particle.userData.speed = 0.004 + Math.random() * 0.004;
-  particle.userData.drift = new THREE.Vector3(
-    (Math.random() - 0.5) * 0.005,
-    0,
-    (Math.random() - 0.5) * 0.005
-  );
-};
+  const stars = [];
 
-const clearSteamEffect = (state) => {
-  if (!state.steamGroup) return;
-
-  state.steamParticles.forEach((particle) => {
-    particle.material.dispose();
-    state.steamGroup.remove(particle);
-  });
-
-  state.anchor.group.remove(state.steamGroup);
-  state.steamGroup = null;
-  state.steamParticles = [];
-};
-
-const createSteamEffect = (state) => {
-  clearSteamEffect(state);
-
-  const steamGroup = new THREE.Group();
-  steamGroup.position.set(0, -1, 0);
-
-  const particles = [];
-
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < count; i++) {
     const material = new THREE.SpriteMaterial({
-      map: smokeTexture,
+      map: STAR_TEXTURES[i % STAR_TEXTURES.length],
       color: 0xffffff,
       transparent: true,
-      opacity: 0,
+      opacity: 1,
       depthWrite: false,
-      blending: THREE.NormalBlending,
+      depthTest: false,
     });
-    const particle = new THREE.Sprite(material);
+    const star = new THREE.Sprite(material);
 
-    resetSteamParticle(particle, true);
-    steamGroup.add(particle);
-    particles.push(particle);
+    // Dirección aleatoria en todas direcciones
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos(2 * Math.random() - 1);
+    const speed = 0.015 + Math.random() * 0.03;
+
+    star.userData.velocity = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta)
+    ).multiplyScalar(speed);
+    star.userData.baseScale = 0.1 + Math.random() * 0.14;
+    star.userData.spin = (Math.random() - 0.5) * 0.2;
+    star.userData.life = 0;
+    star.scale.setScalar(0.001);
+
+    group.add(star);
+    stars.push(star);
   }
 
-  state.steamGroup = steamGroup;
-  state.steamParticles = particles;
-  state.anchor.group.add(steamGroup);
+  const animate = () => {
+    let alive = 0;
+
+    stars.forEach((star) => {
+      if (star.userData.life >= 1) return;
+      alive++;
+
+      star.userData.life += 0.018;
+      const life = Math.min(star.userData.life, 1);
+
+      star.position.add(star.userData.velocity);
+      star.userData.velocity.multiplyScalar(0.97);
+      star.userData.velocity.y -= 0.0003;
+      star.material.rotation += star.userData.spin;
+
+      const popIn = Math.min(life * 8, 1);
+      star.scale.setScalar(star.userData.baseScale * popIn * (1 - life * 0.4));
+      star.material.opacity = 1 - life * life;
+    });
+
+    if (alive > 0) {
+      requestAnimationFrame(animate);
+      return;
+    }
+
+    state.anchor.group.remove(group);
+    stars.forEach((star) => star.material.dispose());
+  };
+
+  requestAnimationFrame(animate);
 };
 
-const updateSteamEffect = (state) => {
-  if (!state.steamGroup || !state.currentModel || !state.isVisible) return;
+// Reduce las líneas de corte de las UVs: sin mipmaps (que mezclan los bordes)
+// y con filtrado anisotrópico para mantener la nitidez
+const improveTextures = (model) => {
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-  state.steamParticles.forEach((particle) => {
-    particle.userData.life += 0.012;
-    particle.position.add(particle.userData.drift);
-    particle.position.y += particle.userData.speed;
-    particle.material.rotation += 0.004;
+  model.traverse((child) => {
+    if (!child.isMesh || !child.material) return;
 
-    const fadeIn = Math.min(particle.userData.life / 0.25, 1);
-    const fadeOut = Math.max(1 - particle.userData.life, 0);
-    particle.material.opacity = 0.38 * Math.min(fadeIn, fadeOut);
-    particle.scale.multiplyScalar(1.006);
-
-    if (particle.userData.life >= 1 || particle.position.y > 1.15) {
-      resetSteamParticle(particle);
-    }
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.forEach((material) => {
+      if (material.map) {
+        material.map.anisotropy = maxAniso;
+        material.map.generateMipmaps = false;
+        material.map.minFilter = THREE.LinearFilter;
+        material.map.needsUpdate = true;
+      }
+    });
   });
+};
+
+const stopModelAnimation = (state) => {
+  if (state.mixer) {
+    state.mixer.stopAllAction();
+    state.mixer = null;
+  }
+  state.idleBase = null;
+};
+
+// Usa las animaciones del .glb; si no tiene, hace una animación "idle" procedural
+const startModelAnimation = (state, gltf) => {
+  stopModelAnimation(state);
+
+  if (gltf.animations && gltf.animations.length > 0) {
+    state.mixer = new THREE.AnimationMixer(gltf.scene);
+    const idleClip =
+      gltf.animations.find((clip) => /idle|walk|fly|float|loop/i.test(clip.name)) ||
+      gltf.animations[0];
+    state.mixer.clipAction(idleClip).play();
+    console.log('Animación:', idleClip.name, `(${gltf.animations.length} disponibles)`);
+    return;
+  }
+
+  console.log('El modelo no trae animaciones, usando animación idle');
+  state.idleBase = {
+    y: gltf.scene.position.y,
+    rotY: gltf.scene.rotation.y,
+    scale: gltf.scene.scale.x,
+  };
+};
+
+const updateModelAnimation = (state, delta, elapsed) => {
+  if (!state.currentModel) return;
+
+  if (state.mixer) {
+    state.mixer.update(delta);
+    return;
+  }
+
+  if (state.idleBase) {
+    const model = state.currentModel;
+    model.position.y = state.idleBase.y + Math.sin(elapsed * 2.2) * 0.05;
+    model.rotation.y = state.idleBase.rotY + Math.sin(elapsed * 1.1) * 0.25;
+    const breathe = 1 + Math.sin(elapsed * 2.2) * 0.03;
+    model.scale.setScalar(state.idleBase.scale * breathe);
+  }
+};
+
+const safeStarBurst = (state) => {
+  try {
+    createStarBurst(state);
+  } catch (error) {
+    console.error('Error en la explosión de estrellas:', error);
+  }
 };
 
 const pulseSkeleton = (state) => {
@@ -361,7 +509,7 @@ const pulseSkeleton = (state) => {
 };
 
 const loadSkeleton = async (state) => {
-  const model = await loadGltf(state.config.skeletonPath);
+  const model = (await loadGltf(state.config.skeletonPath)).scene;
 
   if (!state.isVisible || state.isSkeletonExpired || state.currentModel) {
     return;
@@ -369,11 +517,12 @@ const loadSkeleton = async (state) => {
 
   state.skeletonModel = model;
 
+  // Silueta morada brillante
   state.skeletonModel.traverse((child) => {
     if (child.isMesh) {
       child.material = new THREE.MeshStandardMaterial({
-        color: 0x006fff,
-        emissive: 0x006fff,
+        color: 0x9d4edd,
+        emissive: 0x7b2cbf,
         emissiveIntensity: 3.5,
         transparent: true,
         opacity: 0.9,
@@ -381,7 +530,6 @@ const loadSkeleton = async (state) => {
     }
   });
 
-  console.log(state.config.scale)
   applyScale(state.skeletonModel, state.config);
   state.skeletonModel.position.set(0, 0, 0);
   applyOrientation(state.skeletonModel, state.config, DEFAULT_SKELETON_ROTATION);
@@ -428,25 +576,33 @@ const loadModel = async (state, path) => {
 
   if (state.currentModel) {
     createParticles(state, state.currentModel.position.clone());
-    clearSteamEffect(state);
+    stopModelAnimation(state);
     state.anchor.group.remove(state.currentModel);
     state.currentModel = null;
   }
 
   try {
-    const model = await loadGltf(path);
+    const gltf = await loadGltf(path);
+    const model = gltf.scene;
 
     if (!state.isVisible) {
       return;
     }
 
     state.currentModel = model;
+    improveTextures(model);
     applyScale(state.currentModel, state.config);
     state.currentModel.position.set(0, 0, 0);
     applyOrientation(state.currentModel, state.config, DEFAULT_MODEL_ROTATION);
 
+    startModelAnimation(state, gltf);
     state.anchor.group.add(state.currentModel);
-    createSteamEffect(state);
+    console.log('Modelo cargado:', path, 'escala:', state.config.scale);
+
+    // Explosión de estrellas cuando aparece el Pokémon
+    if (state.modelIndex === 0) {
+      safeStarBurst(state);
+    }
   } catch (error) {
     console.error('Error al cargar el modelo:', error);
     updateStatus(STATUS_MESSAGES.modelLoadError(state.config.statusLabel));
@@ -470,7 +626,7 @@ const clearTargetModels = (state) => {
   }
 
   if (state.currentModel) {
-    clearSteamEffect(state);
+    stopModelAnimation(state);
     state.anchor.group.remove(state.currentModel);
     state.currentModel = null;
   }
@@ -491,7 +647,8 @@ const showTargetUi = (state) => {
   dom.uiScanning.style.display = 'none';
   dom.uiDetected.style.display = 'block';
   dom.uiDetected.textContent = 'Target detectado: ' + state.config.title;
-  dom.changeButton.style.display = 'block';
+  // 'flex' (no 'block') para conservar el layout de la pokébola + texto
+  dom.changeButton.style.display = 'flex';
   dom.changeButton.disabled = true;
   updateChangeButtonLabel(state);
 };
@@ -526,6 +683,8 @@ const handleTargetFound = (state) => {
   }
 
   callApiEndpoint(state.config.title);
+  playFoundSound();
+  safeStarBurst(state);
   dom.scanEffect.style.display = 'block';
 
   if (state.loadTimeout || state.currentModel || state.skeletonModel) return;
@@ -627,6 +786,7 @@ const stopAR = () => {
 const startAR = async () => {
   if (started || isTransitioning) return;
 
+  unlockAudio();
   isTransitioning = true;
   setControlState('starting');
   updateStatus(STATUS_MESSAGES.requestingCamera);
@@ -658,8 +818,13 @@ const startAR = async () => {
     started = true;
     setControlState('active');
 
+    clock.getDelta();
+
     renderer.setAnimationLoop(() => {
       if (!started) return;
+
+      const delta = clock.getDelta();
+      const elapsed = clock.elapsedTime;
 
       targetStates.forEach((state) => {
         if (state.anchor.group.visible && !state.isVisible) {
@@ -672,7 +837,8 @@ const startAR = async () => {
           state.infoPanel.lookAt(camera.position);
         }
 
-        updateSteamEffect(state);
+        updateModelAnimation(state, delta, elapsed);
+
       });
 
       renderer.render(scene, camera);
@@ -713,9 +879,9 @@ dom.changeButton.addEventListener('click', () => {
   const isEating = state.modelIndex !== 0;
 
   if (isEating) {
-  eatSound.currentTime = 0;
-  eatSound.play();
-}
+    eatSound.currentTime = 0;
+    eatSound.play();
+  }
 
   if (state.modelIndex !== -1) {
     updateChangeButtonLabel(state);
@@ -724,7 +890,7 @@ dom.changeButton.addEventListener('click', () => {
   }
 
   if (state.currentModel) {
-    clearSteamEffect(state);
+    stopModelAnimation(state);
     state.anchor.group.remove(state.currentModel);
     state.currentModel = null;
   }

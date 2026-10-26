@@ -1,6 +1,15 @@
+:root {
+  --purple: #7b2cbf;
+  --purple-dark: #3c096c;
+  --purple-deep: #1a0533;
+  --yellow: #ffd60a;
+  --red: #e63946;
+}
+
 * {
   box-sizing: border-box;
 }
+
 html,
 body {
   width: 100%;
@@ -8,13 +17,11 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-  background: #07111f;
+  font-family: Arial, Helvetica, sans-serif;
+  background: radial-gradient(circle at 50% 30%, var(--purple-dark) 0%, var(--purple-deep) 70%);
   color: white;
 }
+
 #ar-container {
   position: fixed;
   top: 0;
@@ -24,7 +31,6 @@ body {
   overflow: hidden;
   z-index: 0;
 }
-
 
 #ar-container video {
   position: absolute;
@@ -68,7 +74,6 @@ body {
   margin-bottom: 20px;
 }
 
-
 .scanner-badge-icon {
   width: 70px;
   height: 70px;
@@ -78,11 +83,12 @@ body {
 #ui-loading h1 {
   margin: 0;
   padding: 0;
-  font-size: clamp(36px,8vw,72px);
+  font-size: clamp(36px, 8vw, 72px);
   line-height: 1;
   font-weight: 900;
   letter-spacing: 3px;
-  text-shadow: 0 4px 15px rgba(0,0,0,0.7);
+  color: var(--yellow);
+  text-shadow: 0 4px 15px rgba(123, 44, 191, 0.9), 0 0 25px rgba(230, 57, 70, 0.5);
 }
 
 .loading-line {
@@ -92,16 +98,16 @@ body {
   margin-top: 18px;
   margin-bottom: 18px;
   border-radius: 10px;
-  background: #39d9ff;
+  background: var(--yellow);
 }
 
 #ui-loading p {
-  width: min(90%,500px);
+  width: min(90%, 500px);
   margin: 0 auto;
-  font-size: clamp(16px,3vw,22px);
+  font-size: clamp(16px, 3vw, 22px);
   line-height: 1.5;
   color: #ffffff;
-  text-shadow:0 3px 10px rgba(0,0,0,0.8);
+  text-shadow: 0 3px 10px rgba(0, 0, 0, 0.8);
 }
 
 .hud {
@@ -113,11 +119,11 @@ body {
   display: flex;
   justify-content: center;
   pointer-events: none;
-  padding-bottom: 45px;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
 }
 
-
 .panel.controls.status {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -132,24 +138,24 @@ body {
   min-width: 280px;
   min-height: 64px;
   padding: 12px 24px;
-  border: 2px solid #39d9ff;
+  border: 2px solid var(--yellow);
   border-radius: 18px;
-  background: rgba(7,17,31,0.95);
+  background: rgba(60, 9, 108, 0.95);
   color: white;
   cursor: pointer;
   font-size: 16px;
   font-weight: bold;
   letter-spacing: 1px;
-  box-shadow:0 8px 30px rgba(0,0,0,0.4);
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .camera-toggle:hover {
   transform: translateY(-2px);
-  background: rgba(15,45,65,0.98);
+  background: rgba(123, 44, 191, 0.98);
+  border-color: var(--red);
 }
+
 .camera-toggle:active {
   transform: translateY(1px);
 }
@@ -170,7 +176,7 @@ body {
   width: 1px;
   height: 28px;
   margin-right: 12px;
-  background: rgba(255,255,255,0.4);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .camera-label {
@@ -178,6 +184,11 @@ body {
 }
 
 .tap-hint {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -186,23 +197,23 @@ body {
   text-align: center;
 }
 
-
 .tap-hint img {
   width: 25px;
   height: 25px;
   margin-bottom: 5px;
 }
 
-
 .tap-hint p {
   margin: 0;
   font-size: 13px;
   line-height: 1.4;
   color: white;
-  text-shadow:0 2px 6px rgba( 0, 0, 0, 0.8 );
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
+
 .tap-hint strong {
   font-weight: bold;
+  color: var(--yellow);
 }
 
 #ar-ui {
@@ -215,7 +226,6 @@ body {
   pointer-events: none;
 }
 
-
 .ar-state {
   display: none;
   position: absolute;
@@ -226,12 +236,12 @@ body {
   max-width: 90%;
   padding: 12px 22px;
   border-radius: 30px;
-  background: rgba(7,17,31,0.85);
-  border: 1px solid #39d9ff;
+  background: rgba(60, 9, 108, 0.88);
+  border: 1px solid var(--yellow);
   color: white;
   text-align: center;
   font-size: 15px;
-  box-shadow:0 5px 20px rgba(0,0, 0,0.4);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 #scan-effect {
@@ -243,132 +253,145 @@ body {
   pointer-events: none;
 }
 
-@media (
-  max-width: 600px
-) {
+/* ---------- Botón de captura (Pokébola) ---------- */
 
+.capture-toggle {
+  position: fixed;
+  bottom: calc(180px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--yellow);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+}
+
+.pokeball-icon {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(230, 57, 70, 0.7));
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.capture-toggle:hover .pokeball-icon {
+  transform: rotate(-15deg) scale(1.1);
+  filter: drop-shadow(0 6px 18px rgba(255, 214, 10, 0.9));
+}
+
+.capture-toggle:active .pokeball-icon {
+  animation: pokeball-shake 0.5s ease;
+}
+
+.capture-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.capture-toggle:disabled .pokeball-icon {
+  filter: grayscale(0.8);
+  transform: none;
+}
+
+@keyframes pokeball-shake {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-25deg); }
+  40% { transform: rotate(20deg); }
+  60% { transform: rotate(-15deg); }
+  80% { transform: rotate(10deg); }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 600px) {
   #ui-loading {
     padding-top: 8vh;
   }
 
-
   .scanner-badge {
     width: 65px;
     height: 65px;
-
     margin-bottom: 15px;
   }
-
 
   .scanner-badge-icon {
     width: 55px;
     height: 55px;
   }
 
-
   #ui-loading h1 {
     font-size: 38px;
-
     letter-spacing: 2px;
   }
-
 
   #ui-loading p {
     font-size: 16px;
   }
 
-
-  .hud {
-    padding-bottom: 25px;
+  .capture-toggle {
+    bottom: calc(175px + env(safe-area-inset-bottom, 0px));
   }
-
 
   .camera-toggle {
     min-width: 250px;
-
     min-height: 58px;
-
     padding: 10px 16px;
-
     font-size: 14px;
   }
-
 
   .camera-icon {
     width: 25px;
     height: 25px;
   }
-
 }
 
-.capture-toggle {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  padding: 14px 15px;
-  border: none;
-  border-radius: 999px;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.capture-toggle:hover {
-  background: #39d9ff;
-  transform: translateX(-50%) scale(1.05);
-}
-
-.capture-toggle:disabled {
-  background: #0080a0;
-  cursor: not-allowed;
-  transform: translateX(-50%);
-  opacity: 0.6;
-}
-
-/* Media query for devices with a maximum height of 650px */
-@media (
-  max-height: 650px
-) {
-
+@media (max-height: 650px) {
   #ui-loading {
     padding-top: 3vh;
   }
-
 
   .scanner-badge {
     margin-bottom: 8px;
   }
 
-
   #ui-loading h1 {
     font-size: 32px;
   }
-
 
   .loading-line {
     margin-top: 10px;
     margin-bottom: 10px;
   }
 
-
   #ui-loading p {
     font-size: 14px;
   }
 
-
   .hud {
-    padding-bottom: 15px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
-
 
   .tap-hint {
     display: none;
   }
 
-}
+  .capture-toggle {
+    bottom: calc(135px + env(safe-area-inset-bottom, 0px));
+  }
 
+  .pokeball-icon {
+    width: 64px;
+    height: 64px;
+  }
+}

@@ -131,13 +131,13 @@ export const targetConfigs = [
     statusLabel: 'Snorlax',
     scale: 0.5,
     rotation: { x:0, y: Math.PI / 10, z: 0},
-    models: ['Assets/models/Pokemon/snorlax.glb'],
+    models: ['Assets/models/Pokemon/snorlax001.glb'],
     stats: [
       { label: 'Tipo', value: 'Normal' },
       { label: 'HP', value: '160' },
       { label: 'Ataque', value: '110' },
     ],
-    skeletonPath: 'Assets/models/Pokemon/snorlax.glb',
+    skeletonPath: 'Assets/models/Pokemon/snorlax001.glb',
   },
   {
     targetIndex: 10,
