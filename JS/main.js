@@ -213,9 +213,10 @@ const callApiEndpoint = (target) => {
       device: /Mobi|Android/i.test(navigator.userAgent) ? "mobile" : "desktop",
       os: navigator.userAgent
     })
+  }).catch((error) => {
+    console.warn('No se pudo registrar la interacción:', error);
   });
 };
-
 const createParticles = (state, position) => {
   const particles = [];
   for (let i = 0; i < 10; i++) {
@@ -290,7 +291,7 @@ const createSteamEffect = (state) => {
   clearSteamEffect(state);
 
   const steamGroup = new THREE.Group();
-  steamGroup.position.set(0, 0.2, 0);
+  steamGroup.position.set(0, -1, 0);
 
   const particles = [];
 
